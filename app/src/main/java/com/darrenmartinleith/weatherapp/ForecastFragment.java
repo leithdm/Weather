@@ -5,6 +5,9 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -20,22 +23,45 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-
 /**
  * A placeholder fragment containing a simple view.
  */
 public class ForecastFragment extends Fragment {
 
-    ArrayAdapter<String> mForecastAdapter;
+    private ArrayAdapter<String> mForecastAdapter;
 
     public ForecastFragment() {
     }
 
     @Override
+    //called before the onCreateView method
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        //to indicate we want call backs for menu events
+        setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.forecastfragment, menu);
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_refresh) {
+            FetchWeatherTask weatherTask = new FetchWeatherTask();
+            weatherTask.execute();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
+        //dummy data
         String[] data = {
                 "Today - Sunny - 88/63",
                 "Tomorrow - Sunny - 88/63",
@@ -45,12 +71,25 @@ public class ForecastFragment extends Fragment {
                 "Sat - Sunny - 88/63",
                 "Sun - Sunny - 88/63",
         };
+
         List<String> weekForecast = new ArrayList<>(Arrays.asList(data));
-        mForecastAdapter = new ArrayAdapter<>(getActivity(), R.layout.list_item_forecast, R.id.list_item_forecast_textview, weekForecast);
+
+        //create an ArrayAdapter. ArrayAdapter will take data from a source and use it
+        //to populate the ListView it's attached to.
+        mForecastAdapter =
+                new ArrayAdapter<>(getActivity(),
+                        R.layout.list_item_forecast,
+                        R.id.list_item_forecast_textview,
+                        weekForecast);
+
+        View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
+
         return rootView;
     }
+
 
     public class FetchWeatherTask extends AsyncTask<Void, Void, Void> {
 
@@ -59,7 +98,6 @@ public class ForecastFragment extends Fragment {
         @Override
         protected Void doInBackground(Void... params) {
 
-            // These two need to be declared outside the try/catch
             HttpURLConnection urlConnection = null;
             BufferedReader reader = null;
 
@@ -69,7 +107,6 @@ public class ForecastFragment extends Fragment {
             try {
                 // Construct the HttpURLConnection for the OpenWeatherMap query
                 URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=dublin&mode=json&units=metric&cnt=7");
-
                 // Create the request to OpenWeatherMap, and open the connection
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setRequestMethod("GET");
@@ -83,7 +120,6 @@ public class ForecastFragment extends Fragment {
                 return null;
             }
                 reader = new BufferedReader(new InputStreamReader(inputStream));
-
                 String line;
                 while ((line = reader.readLine()) != null) {
                     // Since it's JSON, adding a newline isn't necessary (it won't affect parsing)
@@ -91,7 +127,6 @@ public class ForecastFragment extends Fragment {
                     // buffer for debugging.
                     buffer.append(line + "\n");
                 }
-
                 if (buffer.length() == 0) {
                 // Stream was empty.  No point in parsing.
                 return null;
