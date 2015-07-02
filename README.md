@@ -1,4 +1,4 @@
-Weather App using the Open Weather API
+Weather App using the Open Weather Map API
 
 JSON data parsed into list view
 
