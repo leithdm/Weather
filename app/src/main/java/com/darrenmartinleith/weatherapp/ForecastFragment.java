@@ -1,5 +1,6 @@
 package com.darrenmartinleith.weatherapp;
 
+import android.content.Intent;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -12,6 +13,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
@@ -36,6 +38,7 @@ import java.util.List;
 public class ForecastFragment extends Fragment {
 
     private ArrayAdapter<String> mForecastAdapter;
+    public static final String EXTRA_MESSAGE = "com.darrenmartinleith.test.MESSAGE";
 
     public ForecastFragment() {
     }
@@ -44,16 +47,18 @@ public class ForecastFragment extends Fragment {
     //called before the onCreateView method
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        //to indicate we want call backs for main events.
+        //to indiciate that this fragment has menu options
         setHasOptionsMenu(true);
     }
 
+    //inflate the menu that has the newly created refresh button
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.forecastfragment, menu);
     }
 
-    //this is when the temporary refresh button is selected.
+    //check which item was selected, and react appropriatelly. In the case of
+    //refresh, execute a FetchWeatherTask.
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
@@ -85,8 +90,7 @@ public class ForecastFragment extends Fragment {
 
         //create an ArrayAdapter. ArrayAdapter will take data from a source and use it
         //to populate the ListView it's attached to.
-        mForecastAdapter =
-                new ArrayAdapter<>(getActivity(),
+        mForecastAdapter = new ArrayAdapter<>(getActivity(),
                         R.layout.list_item_forecast,
                         R.id.list_item_forecast_textview,
                         weekForecast);
@@ -94,6 +98,15 @@ public class ForecastFragment extends Fragment {
         View rootView = inflater.inflate(R.layout.fragment_main, container, false);
         ListView listView = (ListView) rootView.findViewById(R.id.listview_forecast);
         listView.setAdapter(mForecastAdapter);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int position, long l) {
+                String forecast = mForecastAdapter.getItem(position);
+                Intent intent = new Intent(getActivity(), DetailActivity.class).putExtra(Intent.EXTRA_TEXT, forecast);
+                startActivity(intent);
+//                Toast.makeText(getActivity(), forecast, Toast.LENGTH_SHORT).show();;
+            }
+        });
         return rootView;
     }
 
@@ -298,12 +311,10 @@ public class ForecastFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(String[] strings) {
-            if (strings != null) {
+        protected void onPostExecute(String[] forecastStrings) {
+            if (forecastStrings != null) {
                 mForecastAdapter.clear();
-                for (String dayForecastStr: strings) {
-                    mForecastAdapter.add(dayForecastStr);
-                }
+                mForecastAdapter.addAll(forecastStrings);
             }
         }
     }
